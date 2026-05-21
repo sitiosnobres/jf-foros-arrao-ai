@@ -167,40 +167,15 @@ ${config.site}
         const resultadosSite = await pesquisarSite(message);
 
         // OPENAI
-        const response = await client.chat.completions.create({
+        return res.json({
+  reply: `
+Não encontrei informação específica sobre "${message}".
 
-            model: "gpt-3.5-turbo",
+Podes consultar o site oficial aqui:
 
-            messages: [
-
-                {
-                    role: "system",
-                    content: `
-És o assistente virtual oficial da Junta de Freguesia.
-
-Responde sempre em português de Portugal.
-
-Responde de forma curta, clara e simpática.
-
-Se a pergunta estiver relacionada com serviços da junta, tenta ajudar com base nos links disponíveis.
-
-Se não existir informação específica, sugere consultar o site oficial.
-
-Site oficial:
 ${config.site}
 `
-                },
-
-                {
-                    role: "user",
-                    content: message
-                }
-
-            ]
-
-        });
-
-        const reply = response.choices[0].message.content;
+});
 
         res.json({
             reply: reply
