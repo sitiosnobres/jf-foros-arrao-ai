@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>UFCBA IA</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f4f4;
+    height:100vh;
+}
+
+.chat-container{
+
+    width:100%;
+    height:100vh;
+
+    display:flex;
+    flex-direction:column;
+
+    background:white;
+}
+
+.header{
+
+    background:#005b8f;
+    color:white;
+
+    padding:18px;
+
+    font-size:26px;
+    font-weight:bold;
+}
+
+.messages{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    padding:15px;
+
+    background:#f5f5f5;
+}
+
+.bot-message{
+
+    background:#e7e7e7;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    margin-bottom:10px;
+
+    max-width:85%;
+
+    line-height:1.5;
+}
+
+.user-message{
+
+    background:#d8f5d8;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    margin-bottom:10px;
+
+    margin-left:auto;
+
+    max-width:85%;
+
+    line-height:1.5;
+}
+
+.bot-message a{
+
+    color:#005b8f;
+
+    text-decoration:none;
+
+    font-weight:bold;
+
+    word-break:break-word;
+}
+
+.bot-message a:hover{
+
+    text-decoration:underline;
+}
+
+.input-area{
+
+    display:flex;
+
+    gap:10px;
+
+    padding:12px;
+
+    border-top:1px solid #ddd;
+
+    background:white;
+}
+
+.input-area input{
+
+    flex:1;
+
+    padding:12px;
+
+    border:1px solid #ccc;
+
+    border-radius:8px;
+
+    font-size:15px;
+}
+
+.input-area button{
+
+    padding:12px 18px;
+
+    border:none;
+
+    background:#005b8f;
+
+    color:white;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    transition:0.2s;
+}
+
+.input-area button:hover{
+
+    opacity:0.9;
+}
+
+.typing{
+
+    background:#e7e7e7;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    margin-bottom:10px;
+
+    max-width:85%;
+
+    color:#666;
+
+    font-style:italic;
+
+    animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+
+    0%{
+        opacity:0.4;
+    }
+
+    50%{
+        opacity:1;
+    }
+
+    100%{
+        opacity:0.4;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <div class="header">
+        UFCBA Assistente Virtual
+    </div>
+
+    <div class="messages" id="messages">
+
+        <div class="bot-message">
+            Olá ?? Em que posso ajudar?
+        </div>
+
+    </div>
+
+    <div class="input-area">
+
+        <input
+            type="text"
+            id="userInput"
+            placeholder="Escreva a sua mensagem..."
+        >
+
+        <button onclick="sendMessage()">
+            Enviar
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+function formatarLinks(texto){
+
+    return texto.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank">$1</a>'
+    );
+}
+
+async function sendMessage(){
+
+    const input = document.getElementById("userInput");
+
+    const text = input.value.trim();
+
+    if(!text) return;
+
+    const messages = document.getElementById("messages");
+
+    // mensagem utilizador
+    const userDiv = document.createElement("div");
+
+    userDiv.className = "user-message";
+
+    userDiv.innerText = text;
+
+    messages.appendChild(userDiv);
+
+    input.value = "";
+
+    messages.scrollTop = messages.scrollHeight;
+
+    // typing
+    const typingDiv = document.createElement("div");
+
+    typingDiv.className = "typing";
+
+    typingDiv.innerText = "UFCBA AI está a escrever...";
+
+    messages.appendChild(typingDiv);
+
+    messages.scrollTop = messages.scrollHeight;
+
+    try{
+
+        const response = await fetch("/chat",{
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify({
+                message:text
+            })
+        });
+
+        const data = await response.json();
+
+        // remove typing
+        typingDiv.remove();
+
+        // resposta bot
+        const botDiv = document.createElement("div");
+
+        botDiv.className = "bot-message";
+
+        botDiv.innerHTML = formatarLinks(data.reply);
+
+        messages.appendChild(botDiv);
+
+    }catch(error){
+
+        typingDiv.remove();
+
+        const erroDiv = document.createElement("div");
+
+        erroDiv.className = "bot-message";
+
+        erroDiv.innerText = "Erro ao contactar o servidor.";
+
+        messages.appendChild(erroDiv);
+    }
+
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// enter para enviar
+document
+.getElementById("userInput")
+.addEventListener("keypress", function(e){
+
+    if(e.key === "Enter"){
+
+        sendMessage();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
