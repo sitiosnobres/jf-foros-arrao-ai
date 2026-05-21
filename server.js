@@ -8,7 +8,6 @@ const config = JSON.parse(
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
-const fetch = require("node-fetch");
 
 const app = express();
 
@@ -25,163 +24,7 @@ const client = new OpenAI({
 // =========================
 
 async function pesquisarSite(pergunta) {
-
-    try {
-
-        const perguntaNormalizada = pergunta
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-
-        let resultados = "";
-
-        // GOOGLE CUSTOM SEARCH
-        const urlGoogle =
-            `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(pergunta)}&num=5&key=${process.env.GOOGLE_API_KEY}&cx=${process.env.GOOGLE_CX}`;
-
-        const responseGoogle = await fetch(urlGoogle);
-
-        const dataGoogle = await responseGoogle.json();
-
-        console.log("RESULTADOS GOOGLE:");
-        console.log(JSON.stringify(dataGoogle, null, 2));
-
-        // RESULTADOS GOOGLE
-        if (dataGoogle.items && dataGoogle.items.length > 0) {
-
-            dataGoogle.items.slice(0, 3).forEach((item, index) => {
-
-                resultados += `
-Resultado ${index + 1}:
-
-Título:
-${item.title}
-
-Link:
-${item.link}
-
-Resumo:
-${item.snippet}
-
-`;
-
-            });
-
-        }
-
-        // PÁGINAS IMPORTANTES
-        const paginas = [
-            "https://www.cojaebarrildealva.pt/",
-            "https://www.cojaebarrildealva.pt/portal-de-turismo/",
-            "https://www.cojaebarrildealva.pt/category/noticias/",
-            "https://www.cojaebarrildealva.pt/publicacoes-oficiais/",
-            "https://www.cojaebarrildealva.pt/espaco-do-cidadao/",
-            "https://www.cojaebarrildealva.pt/secretaria-online/"
-        ];
-
-        let encontrou = false;
-
-        for (const pagina of paginas) {
-
-            try {
-
-                const respostaSite = await fetch(pagina);
-
-                const html = await respostaSite.text();
-
-                const htmlNormalizado = html
-                    .toLowerCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "");
-
-                // PESQUISA HTML
-                if (htmlNormalizado.includes(perguntaNormalizada)) {
-
-                    resultados += `
-Foi encontrada informação relacionada com "${pergunta}" na página:
-${pagina}
-
-`;
-
-                    encontrou = true;
-                }
-
-                // EXTRAIR LINKS
-                const regexLinks = /href="([^"]+)"/g;
-
-                let match;
-
-                while ((match = regexLinks.exec(html)) !== null) {
-
-                    const link = match[1];
-
-                    if (!link.startsWith("http")) {
-                        continue;
-                    }
-
-                    const linkNormalizado = link
-                        .toLowerCase()
-                        .normalize("NFD")
-                        .replace(/[\u0300-\u036f]/g, "");
-
-                    const slugLink = linkNormalizado
-                        .replace("https://www.cojaebarrildealva.pt/", "")
-                        .replace(/\//g, " ")
-                        .replace(/-/g, " ")
-                        .trim();
-
-                    // LINK PRINCIPAL
-                    if (slugLink.includes(perguntaNormalizada)) {
-
-                        resultados =
-`LINK PRINCIPAL ENCONTRADO:
-${link}
-
-` + resultados;
-
-                        encontrou = true;
-                    }
-
-                    // LINK RELACIONADO
-                    else if (linkNormalizado.includes(perguntaNormalizada)) {
-
-                        resultados +=
-`Link relacionado encontrado:
-${link}
-
-`;
-
-                        encontrou = true;
-                    }
-
-                }
-
-            } catch (e) {
-
-                console.log("Erro ao verificar página:", pagina);
-
-            }
-
-        }
-
-        // SEM RESULTADOS
-        if (!encontrou && !resultados.trim()) {
-
-            return `Não foram encontrados resultados oficiais sobre "${pergunta}".`;
-
-        }
-
-        return resultados;
-
-    } catch (erro) {
-
-        console.error("ERRO AO PESQUISAR SITE:");
-        console.error(erro);
-
-        return "Erro ao pesquisar o site.";
-
-    }
-
+    return "";
 }
 
 // =========================
@@ -200,95 +43,128 @@ app.post("/chat", async (req, res) => {
         // PALAVRAS-CHAVE INTELIGENTES
         // =========================
 
-        const pergunta = message.toLowerCase();
+        const pergunta = message
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
 
         // ATAS
-if (
-    pergunta.includes("ata") ||
-    pergunta.includes("atas")
-) {
+        if (
+            pergunta.includes("ata") ||
+            pergunta.includes("atas")
+        ) {
 
-    return res.json({
-        reply: `
-Podes consultar as atas da União de Freguesias aqui:
+            return res.json({
+                reply: `
+Podes consultar as atas da Junta de Freguesia aqui:
 
 ${config.links.atas}
 `
-    });
+            });
 
-}
+        }
 
-// EDITAIS
-if (
-    pergunta.includes("edital") ||
-    pergunta.includes("editais")
-) {
+        // EDITAIS
+        if (
+            pergunta.includes("edital") ||
+            pergunta.includes("editais")
+        ) {
 
-    return res.json({
-        reply: `
+            return res.json({
+                reply: `
 Podes consultar os editais e avisos aqui:
 
 ${config.links.editais}
 `
-    });
+            });
 
-}
+        }
 
-// EVENTOS
-if (
-    pergunta.includes("evento") ||
-    pergunta.includes("eventos")
-) {
+        // EVENTOS
+        if (
+            pergunta.includes("evento") ||
+            pergunta.includes("eventos")
+        ) {
 
-    return res.json({
-        reply: `
+            return res.json({
+                reply: `
 Podes consultar a agenda oficial de eventos aqui:
 
 ${config.links.eventos}
 `
-    });
+            });
 
-}
+        }
 
-// TURISMO
-if (
-    pergunta.includes("turismo") ||
-    pergunta.includes("portal de turismo")
-) {
+        // TURISMO
+        if (
+            pergunta.includes("turismo") ||
+            pergunta.includes("portal de turismo")
+        ) {
 
-    return res.json({
-        reply: `
+            return res.json({
+                reply: `
 Podes consultar o portal oficial de turismo aqui:
 
 ${config.links.turismo}
 `
-    });
+            });
 
-}
+        }
 
-// EXECUTIVO / JUNTA / COMPOSIÇÃO
-if (
-    pergunta.includes("executivo") ||
-    pergunta.includes("junta de freguesia") ||
-    pergunta.includes("composicao") ||
-    pergunta.includes("composição")
-) {
+        // EXECUTIVO / JUNTA / COMPOSIÇÃO
+        if (
+            pergunta.includes("executivo") ||
+            pergunta.includes("junta de freguesia") ||
+            pergunta.includes("composicao") ||
+            pergunta.includes("composição")
+        ) {
 
-    return res.json({
-        reply: `
+            return res.json({
+                reply: `
 Podes consultar a composição do executivo da Junta de Freguesia aqui:
 
 ${config.links.executivo}
 `
-    });
+            });
 
-}
+        }
 
-        // PESQUISAR SITE
+        // DOCUMENTOS
+        if (
+            pergunta.includes("documento") ||
+            pergunta.includes("documentos")
+        ) {
+
+            return res.json({
+                reply: `
+Podes consultar os documentos oficiais aqui:
+
+${config.links.documentos}
+`
+            });
+
+        }
+
+        // OCORRÊNCIAS
+        if (
+            pergunta.includes("ocorrencia") ||
+            pergunta.includes("ocorrências") ||
+            pergunta.includes("ocorrencias")
+        ) {
+
+            return res.json({
+                reply: `
+Podes contactar a Junta de Freguesia para comunicar ocorrências ou pedidos de apoio através do site oficial:
+
+${config.site}
+`
+            });
+
+        }
+
+        // PESQUISA LIVRE
         const resultadosSite = await pesquisarSite(message);
-
-        console.log("RESULTADOS FINAIS:");
-        console.log(resultadosSite);
 
         // OPENAI
         const response = await client.chat.completions.create({
@@ -300,35 +176,18 @@ ${config.links.executivo}
                 {
                     role: "system",
                     content: `
-És o assistente virtual oficial da União de Freguesias de Coja e Barril de Alva.
+És o assistente virtual oficial da Junta de Freguesia.
 
 Responde sempre em português de Portugal.
 
-Usa SEMPRE os resultados encontrados no site oficial.
+Responde de forma curta, clara e simpática.
 
-Se existirem links principais encontrados, dá prioridade máxima a esses links.
+Se a pergunta estiver relacionada com serviços da junta, tenta ajudar com base nos links disponíveis.
 
-Nunca digas que não encontraste informação se existirem resultados.
+Se não existir informação específica, sugere consultar o site oficial.
 
-Responde de forma curta, natural e objetiva.
-
-Evita respostas demasiado longas.
-
-Fala como um assistente virtual moderno e simpático.
-
-Quando existir um link principal relevante, mostra-o logo no início da resposta.
-
-Evita listar demasiados links desnecessários.
-
-Resume a informação mais importante em poucas frases.
-
-Se existirem links relevantes, menciona-os claramente.
-
-Se realmente não existirem resultados, então informa claramente que não foi encontrada informação oficial disponível.
-
-Resultados encontrados no site:
-
-${resultadosSite}
+Site oficial:
+${config.site}
 `
                 },
 
